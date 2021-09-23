@@ -54,21 +54,44 @@ def draw_data():
 
     figure_1 = {'data': [go.Scatter(x=dfs.date[-days_to_show:],
                                     y=dfs.c[-days_to_show:],
-                                    name="A",)],
+                                    name="Closing",),
+                         go.Scatter(x=dfs.date[-days_to_show:],
+                                    y=dfs.h[-days_to_show:],
+                                    name="High", ),
+                         go.Scatter(x=dfs.date[-days_to_show:],
+                                    y=dfs.l[-days_to_show:],
+                                    name="Low", )
+
+                         ],
                 'layout': go.Layout(
-                    title="Aggregated Consumption (Volume)",
                     xaxis_title="",
-                    yaxis_title="Total Volume",
+                    yaxis_title="Price ($)",
                     font=fonts_histogram,
                     hovermode='closest',
                     autosize=False, height=200,
                     margin={"l": 50, "r": 15, "b": 40, "t": 30, "pad": 0},
                 )}
 
-    table = get_statistics(dfs)
+    figure_2 = {'data': [go.Scatter(x=dfs.date[-days_to_show:],
+                                    y=dfs.v[-days_to_show:],
+                                    name="Value",)
+                         ],
+                'layout': go.Layout(
+                    xaxis_title="",
+                    yaxis_title="Volume",
+                    font=fonts_histogram,
+                    hovermode='closest',
+                    autosize=False, height=100,
+                    margin={"l": 50, "r": 15, "b": 40, "t": 30, "pad": 0},
+                )}
+
+
+    table = get_statistics(dfs[-days_to_show:])
 
     return dcc.Graph(figure=figure_1,
-                     config={'displayModeBar': False}),\
+                     config={'displayModeBar': False}), \
+           dcc.Graph(figure=figure_2,
+                     config={'displayModeBar': False}), \
            table
 
 
@@ -96,7 +119,7 @@ def get_layout():
                     width=12, id="hist_graph_1"),
 
 
-            ], className="h-75"),
+            ]),
 
 
         # 2nd Row
@@ -106,7 +129,7 @@ def get_layout():
                     dcc.Graph(figure={'data': [go.Scatter(x=[1], y=[1])], },
                               config=dict(displayModeBar=False)),
                     width=12, id="hist_graph_2"),
-            ], className="h-25"),
+            ]),
 
         # 3rd Row
         dbc.Row(
@@ -124,7 +147,7 @@ def get_layout():
                         column_selectable="single",
                         selected_columns=[],
                         selected_rows=[],
-                        style_table={'height': 300},
+                        style_table={'height': 400},
                         virtualization=True,
                         # page_size=20,
                         columns=cols,
@@ -136,32 +159,19 @@ def get_layout():
                             'backgroundColor': 'black'
                         },
                     ),
-                    width=3
+                    width=6
                 ),
-
-                dbc.Col(
-                    dcc.Graph(figure={'data': [go.Scatter(x=[1], y=[1])], },
-                              config=dict(displayModeBar=False)),
-                    width=9, id="hist_graph_3"),
-
-            ], className="h-25"),
-
-        # 4th Row
-        dbc.Row(
-            [
                 dbc.Col(
                     html.Div([
                         dcc.Slider(id='slider_days',
                                    min=0, max=365, step=1, value=30),
                         html.Div(id='slider_days_container'), ]
-                    ),
-                    width=2,
+                    ), width=2,
                 ),
 
-                dbc.Col(html.Button('Download', id='btn-download'),
-                        width=2),
+                dbc.Col(html.Button('Download', id='btn-download'), width=3),
+            ]),
 
-            ], className="h-25"),
     ])
 
     return layout
@@ -175,6 +185,7 @@ if __name__ == '__main__':
     @app.callback(
         [dash.dependencies.Output('slider_days_container', 'children'),
          dash.dependencies.Output('hist_graph_1', 'children'),
+         dash.dependencies.Output('hist_graph_2', 'children'),
          dash.dependencies.Output('dataframe_output', 'data')
          ],
         [dash.dependencies.Input('slider_days', 'value'),
@@ -187,7 +198,7 @@ if __name__ == '__main__':
             days_to_show = int(val1)
         elif 'btn-download' in changed_id:
             print("TODO")
-        g1, tab = draw_data()
-        return f'Period: {days_to_show} days', g1, tab
+        g1, g2, tab = draw_data()
+        return f'Period: {days_to_show} days', g1, g2, tab
 
     app.run_server(debug=True)
