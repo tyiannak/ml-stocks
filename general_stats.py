@@ -20,7 +20,7 @@ key = f.readline().replace("\n", "")
 finnhub_client = finnhub.Client(api_key=key)
 apple = finnhub_client.company_basic_financials('AAPL', 'all')
 x = finnhub_client.stock_candles('AAPL', 'D',
-                                 int(time.time()) - 3600 * 24 * 365,
+                                 int(time.time()) - 3600 * 24 * 365 * 5,
                                  int(time.time()))
 
 
@@ -37,8 +37,9 @@ def get_statistics(data_frames):
     stats = {}
     for name in ['c', 'h', 'l', 'o', 'v']:
         print(data_frames[name])
-        stats[name] = {'mean':  float(data_frames[name].mean().round(2)),
-                       'max':   float(data_frames[name].max().round(2))}
+        stats[name] = {  'min':   float(data_frames[name].min().round(2)),
+                         'mean':  float(data_frames[name].mean().round(2)),
+                         'max':   float(data_frames[name].max().round(2))}
     print(stats)
     return pd.DataFrame.from_dict(stats,
                                   orient='index').reset_index().\
@@ -99,7 +100,8 @@ def get_layout():
     """
     Initialize the UI layout
     """
-    cols = [{"name": "Sensor", "id": "index"},
+    cols = [{"name": "Measure", "id": "index"},
+            {"name": "min", "id": "min"},
             {"name": "mean", "id": "mean"},
             {"name": "max", "id": "max"}]
 
@@ -164,7 +166,7 @@ def get_layout():
                 dbc.Col(
                     html.Div([
                         dcc.Slider(id='slider_days',
-                                   min=0, max=365, step=1, value=30),
+                                   min=0, max=365*5, step=1, value=30),
                         html.Div(id='slider_days_container'), ]
                     ), width=2,
                 ),
