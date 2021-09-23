@@ -17,12 +17,6 @@ import time
 
 f = open(".finnhubkey", "r")
 key = f.readline().replace("\n", "")
-finnhub_client = finnhub.Client(api_key=key)
-apple = finnhub_client.company_basic_financials('AAPL', 'all')
-x = finnhub_client.stock_candles('AAPL', 'D',
-                                 int(time.time()) - 3600 * 24 * 365 * 5,
-                                 int(time.time()))
-
 
 colors = {'background': '#111111', 'text': '#7FDBDD'}
 fonts_histogram = dict(family="Courier New, monospace", size=12,
@@ -32,6 +26,8 @@ global dfs
 
 global days_to_show
 days_to_show = 30
+global stock_name
+stock_name = "AAPL"
 
 def get_statistics(data_frames):
     stats = {}
@@ -50,6 +46,13 @@ def draw_data():
     # filtering:
     global days_to_show
     global dfs
+
+    finnhub_client = finnhub.Client(api_key=key)
+    apple = finnhub_client.company_basic_financials(stock_name, 'all')
+    x = finnhub_client.stock_candles(stock_name, 'D',
+                                     int(time.time()) - 3600 * 24 * 365 * 5,
+                                     int(time.time()))
+
     dfs = pd.DataFrame(x)
     dfs['date'] = pd.to_datetime(dfs['t'], unit='s')
 
@@ -163,6 +166,23 @@ def get_layout():
                     ),
                     width=6
                 ),
+
+                dbc.Col(
+                    html.Div([
+                    dcc.Dropdown(
+                        id='dropdown_name',
+                        options=[
+                            {'label': 'Apple', 'value': 'AAPL'},
+                            {'label': 'Google', 'value': 'GOOGL'},
+                            {'label': 'Nvidia', 'value': 'NVDA'},
+                            {'label': 'Microsoft', 'value': 'MSFT'},
+                            {'label': 'Tesla', 'value': 'TSLA'}
+                        ],
+                        value='NYC'),
+                        html.Div(id='dd-output-container')
+                    ]), width=2,
+                ),
+
                 dbc.Col(
                     html.Div([
                         dcc.Slider(id='slider_days',
@@ -171,7 +191,7 @@ def get_layout():
                     ), width=2,
                 ),
 
-                dbc.Col(html.Button('Download', id='btn-download'), width=3),
+                dbc.Col(html.Button('Download', id='btn-download'), width=2),
             ]),
 
     ])
@@ -191,15 +211,20 @@ if __name__ == '__main__':
          dash.dependencies.Output('dataframe_output', 'data')
          ],
         [dash.dependencies.Input('slider_days', 'value'),
+         dash.dependencies.Input('dropdown_name', 'value'),
          dash.dependencies.Input('btn-download', 'n_clicks')])
-    def update_output(val1, val2):
+    def update_output(val1, val2, val3):
         changed_id = [p['prop_id']
                       for p in dash.callback_context.triggered][0]
         if 'slider_days' in changed_id:
             global days_to_show
             days_to_show = int(val1)
+        elif 'dropdown_name' in changed_id:
+            global stock_name
+            stock_name = val2
         elif 'btn-download' in changed_id:
             print("TODO")
+
         g1, g2, tab = draw_data()
         return f'Period: {days_to_show} days', g1, g2, tab
 
